@@ -1,0 +1,43 @@
+name: Generate 3 Clips
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  clip:
+    if: github.event.issue.user.login == github.repository_owner && startsWith(github.event.issue.title, '[CLIP]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          pip install -r requirements.txt
+      - name: Read submitted URL
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python - <<'PY'
+          import os,re
+          body=os.environ.get('ISSUE_BODY','')
+          urls=re.findall(r'https://[^\s<>]+',body)
+          if len(urls)!=1:
+              raise SystemExit('Isi issue harus berisi tepat satu URL.')
+          with open('video_url.txt','w') as f:
+              f.write(urls[0].strip(').,'))
+          PY
+      - name: Generate clips
+        run: python clipper.py --url "$(cat video_url.txt)"
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoclip-3-videos
+          path: output/
+          retention-days: 7
