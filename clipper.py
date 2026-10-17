@@ -14,8 +14,20 @@ def acquire(url):
         paths=list(Path('.').glob('source.*'))
         if not paths: raise RuntimeError('Tidak berhasil mengambil video dari platform.')
         return paths[0]
-    if not re.match(r'^https://(?:github\.com/user-attachments/assets/|github\.com/[^/]+/[^/]+/assets/|github\.githubassets\.com/)',url,re.I):
-        raise ValueError('Gunakan URL YouTube/TikTok atau lampiran MP4 dari GitHub Issue.')
+    from urllib.parse import urlparse
+
+host = (urlparse(response.url).hostname or "").lower()
+allowed = (
+    host == "github.com"
+    or host.endswith(".github.com")
+    or host == "githubusercontent.com"
+    or host.endswith(".githubusercontent.com")
+    or host == "githubassets.com"
+    or host.endswith(".githubassets.com")
+)
+
+if not allowed or urlparse(response.url).scheme != "https":
+    raise ValueError("Redirect lampiran tidak diizinkan.")
     req=urllib.request.Request(url,headers={'User-Agent':'AUTOCLIP-AI/1.1'})
     with urllib.request.urlopen(req,timeout=60) as response, open('source.mp4','wb') as f:
         if not response.url.startswith(('https://github.com/','https://github.githubassets.com/','https://objects.githubusercontent.com/')):
