@@ -1,2 +1,2 @@
-yt-dlp[default]>=2025.9.1
+yt-dlp>=2025.1.1
 faster-whisper>=1.1.0
